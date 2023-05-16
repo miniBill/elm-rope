@@ -475,9 +475,10 @@ append left right =
 Complexity: O(1)
 
 -}
-concat : List (Rope a) -> Rope a
+concat : Rope (Rope a) -> Rope a
 concat ropes =
-    Node ropes
+    -- the inversion is intentional!
+    foldl (\rope acc -> append acc rope) empty ropes
 
 
 {-| Map a given function onto a list and flatten the resulting lists.
@@ -487,6 +488,7 @@ concat ropes =
 -}
 concatMap : (a -> Rope b) -> Rope a -> Rope b
 concatMap f ropes =
+    -- the inversion is intentional!
     foldl (\rope acc -> append acc (f rope)) empty ropes
 
 
