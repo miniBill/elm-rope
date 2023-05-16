@@ -234,6 +234,7 @@ filter isGood rope =
                 (List.foldr
                     (\x acc ->
                         let
+                            filtered : Rope a
                             filtered =
                                 filter isGood x
                         in
@@ -270,6 +271,7 @@ filterMap isGood rope =
                 (List.foldr
                     (\x acc ->
                         let
+                            filtered : Rope b
                             filtered =
                                 filterMap isGood x
                         in
