@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "elm-test": "^0.19.1-revision12",
+    "elm-verify-examples": "^5.2.0"
+  }
+}
