@@ -1,17 +1,14 @@
 module Rope exposing
     ( Rope
-    , empty, singleton, cons, snoc, fromList
+    , empty, singleton, append, prepend, fromList
     , map, indexedMap, foldl, foldr, filter, filterMap, toList
     , length, reverse, member, all, any, maximum, minimum, sum, product
-    , append, concat, concatMap
+    , appendTo, prependTo, concat, concatMap
     , isEmpty
+    , concatMapTco, foldlTco
     )
 
-{-| A `Rope` is similar to a list, but has fast (constant time) concatenation at both ends, and fast concatenation of two `Rope`s.
-
-It's slightly slower (O(n + operations) instead of O(n)) to iterate through, so you should convert it to a `List` if you plan to use it repeatedly.
-
-Internally the `Rope` is a tree of lists.
+{-|
 
 
 # Types
@@ -21,7 +18,7 @@ Internally the `Rope` is a tree of lists.
 
 # Create
 
-@docs empty, singleton, cons, snoc, fromList
+@docs empty, singleton, append, prepend, fromList
 
 
 # Transform
@@ -36,7 +33,7 @@ Internally the `Rope` is a tree of lists.
 
 # Combine
 
-@docs append, concat, concatMap
+@docs appendTo, prependTo, concat, concatMap
 
 
 # Deconstruct
@@ -46,7 +43,13 @@ Internally the `Rope` is a tree of lists.
 -}
 
 
-{-| -}
+{-| A `Rope` is similar to a list, but has fast (constant time) concatenation at both ends, and fast concatenation of two `Rope`s.
+
+It's slightly slower (O(n + operations) instead of O(n)) to iterate through, so you should convert it to a `List` if you plan to use it repeatedly.
+
+Internally the `Rope` is a tree of lists.
+
+-}
 type Rope a
     = Leaf (List a)
     | Node (List (Rope a))
@@ -79,37 +82,36 @@ singleton value =
 
 {-| Add an element to the front of a list.
 
-    cons 1 (fromList [2,3]) |> toList
+    prepend 1 (fromList [2,3]) |> toList
     --> [1,2,3]
-    cons 1 empty |> toList
+    prepend 1 empty |> toList
     --> [1]
-
-This operator is pronounced _cons_ for historical reasons, but you can think
-of it like pushing an entry onto a stack.
 
 Complexity: O(1)
 
 -}
-cons : a -> Rope a -> Rope a
-cons head tail =
-    Node [ Leaf [ head ], tail ]
+prepend : a -> Rope a -> Rope a
+prepend head tail =
+    case tail of
+        Leaf list ->
+            Leaf (head :: list)
+
+        Node ropes ->
+            Node (Leaf [ head ] :: ropes)
 
 
 {-| Add an element to the end of a list.
 
-    snoc 1 (fromList [2,3]) |> toList
+    append 1 (fromList [2,3]) |> toList
     --> [2,3,1]
-    snoc 1 empty |> toList
+    append 1 empty |> toList
     --> [1]
-
-This operator is pronounced _snoc_ for historical reasons, but you can think
-of it like pushing an entry at the end of a queue.
 
 Complexity: O(1)
 
 -}
-snoc : a -> Rope a -> Rope a
-snoc tail head =
+append : a -> Rope a -> Rope a
+append tail head =
     Node [ head, Leaf [ tail ] ]
 
 
@@ -142,7 +144,10 @@ Complexity: O(n)
 -}
 map : (a -> b) -> Rope a -> Rope b
 map f rope =
-    foldr (\x acc -> cons (f x) acc) empty rope
+    rope
+        |> foldl (\e acc -> f e :: acc) []
+        |> List.reverse
+        |> fromList
 
 
 {-| Same as `map` but the function is also applied to the index of each
@@ -155,8 +160,8 @@ Complexity: O(n)
 
 -}
 indexedMap : (Int -> a -> b) -> Rope a -> Rope b
-indexedMap f xs =
-    xs
+indexedMap f rope =
+    rope
         |> foldl (\e ( i, acc ) -> ( i + 1, f i e :: acc )) ( 0, [] )
         |> Tuple.second
         |> List.reverse
@@ -189,6 +194,56 @@ foldl f acc rope =
 
         Node ropes ->
             List.foldl (\childRope childAcc -> foldl f childAcc childRope) acc ropes
+
+
+{-| Reduce a rope from the left.
+
+    foldlTco (+) 0 (fromList [ 1, 2, 3 ])
+    --> 6
+
+    foldlTco (::) [] (fromList [ 1, 2, 3 ])
+    --> [ 3, 2, 1 ]
+
+So `foldlTco step state [1,2,3]` is like saying:
+
+    state
+        |> step 1
+        |> step 2
+        |> step 3
+
+Complexity: O(n)
+
+-}
+foldlTco : (a -> b -> b) -> b -> Rope a -> b
+foldlTco f acc rope =
+    case rope of
+        Leaf list ->
+            List.foldl f acc list
+
+        Node [] ->
+            acc
+
+        Node ropes ->
+            let
+                foldlTcoHelper : List (List (Rope a)) -> b -> b
+                foldlTcoHelper queue res =
+                    case queue of
+                        [] ->
+                            res
+
+                        [] :: tail ->
+                            foldlTcoHelper tail res
+
+                        ((Leaf list) :: headTail) :: tail ->
+                            foldlTcoHelper (headTail :: tail) (List.foldl f res list)
+
+                        ((Node []) :: headTail) :: tail ->
+                            foldlTcoHelper (headTail :: tail) res
+
+                        ((Node childRopes) :: headTail) :: tail ->
+                            foldlTcoHelper (childRopes :: headTail :: tail) res
+            in
+            foldlTcoHelper [ ropes ] acc
 
 
 {-| Reduce a rope from the right.
@@ -451,34 +506,64 @@ product numbers =
 -- COMBINE
 
 
-{-| Put two ropes together.
+{-| Put two ropes together, the second after the first.
 
-    append (fromList [ 1, 1, 2 ]) (fromList [ 3, 5, 8 ]) |> toList
+    appendTo (fromList [ 1, 1, 2 ]) (fromList [ 3, 5, 8 ]) |> toList
     --> [ 1, 1, 2, 3, 5, 8 ]
 
-    append (fromList [ 'a', 'b' ]) (fromList [ 'c' ]) |> toList
+    appendTo (fromList [ 'a', 'b' ]) (fromList [ 'c' ]) |> toList
     --> [ 'a', 'b', 'c' ]
 
 Complexity: O(1)
 
 -}
-append : Rope a -> Rope a -> Rope a
-append left right =
-    Node [ left, right ]
+appendTo : Rope a -> Rope a -> Rope a
+appendTo left right =
+    case right of
+        Node ropes ->
+            Node (left :: ropes)
+
+        Leaf _ ->
+            Node [ left, right ]
 
 
-{-| Concatenate a bunch of ropes into a single rope:
+{-| Put two ropes together, the first after the second.
 
-    concat [ fromList [ 1, 2 ], fromList [ 3 ], fromList [ 4, 5 ] ] |> toList
-    --> [ 1, 2, 3, 4, 5 ]
+    prependTo (fromList [ 1, 1, 2 ]) (fromList [ 3, 5, 8 ]) |> toList
+    --> [ 3, 5, 8, 1, 1, 2 ]
+
+    prependTo (fromList [ 'a', 'b' ]) (fromList [ 'c' ]) |> toList
+    --> [ 'c', 'a', 'b' ]
 
 Complexity: O(1)
 
 -}
+prependTo : Rope a -> Rope a -> Rope a
+prependTo left right =
+    case left of
+        Node ropes ->
+            Node (right :: ropes)
+
+        Leaf _ ->
+            Node [ right, left ]
+
+
+{-| Concatenate a bunch of ropes into a single rope:
+
+    concat <| fromList [ fromList [ 1, 2 ], fromList [ 3 ], fromList [ 4, 5 ] ] |> toList
+    --> [ 1, 2, 3, 4, 5 ]
+
+Complexity: O(n), in practice it can be O(1) if the top level is the result of `fromList`
+
+-}
 concat : Rope (Rope a) -> Rope a
 concat ropes =
-    -- the inversion is intentional!
-    foldl (\rope acc -> append acc rope) empty ropes
+    case ropes of
+        Leaf list ->
+            Node list
+
+        Node children ->
+            Node (List.map concat children)
 
 
 {-| Map a given function onto a list and flatten the resulting lists.
@@ -487,9 +572,24 @@ concat ropes =
 
 -}
 concatMap : (a -> Rope b) -> Rope a -> Rope b
-concatMap f ropes =
-    -- the inversion is intentional!
-    foldl (\rope acc -> append acc (f rope)) empty ropes
+concatMap f rope =
+    case rope of
+        Leaf list ->
+            Node (List.map f list)
+
+        Node _ ->
+            --List.foldl (\child acc -> appendTo acc (concatMap f child)) empty ropes
+            foldlTco (\child acc -> appendTo acc (f child)) empty rope
+
+
+{-| Map a given function onto a list and flatten the resulting lists.
+
+    concatMap f xs == concat (map f xs)
+
+-}
+concatMapTco : (a -> Rope b) -> Rope a -> Rope b
+concatMapTco f ropes =
+    foldlTco (\rope acc -> appendTo acc (f rope)) empty ropes
 
 
 
