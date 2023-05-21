@@ -146,7 +146,7 @@ map f rope =
     rope
         |> foldl (\e acc -> f e :: acc) []
         |> List.reverse
-        |> fromList
+        |> Leaf
 
 
 {-| Same as `map` but the function is also applied to the index of each
@@ -164,7 +164,7 @@ indexedMap f rope =
         |> foldl (\e ( i, acc ) -> ( i + 1, f i e :: acc )) ( 0, [] )
         |> Tuple.second
         |> List.reverse
-        |> fromList
+        |> Leaf
 
 
 {-| Reduce a rope from the left.
