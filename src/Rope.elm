@@ -521,7 +521,7 @@ prependTo left right =
 
 {-| Concatenate a bunch of ropes into a single rope:
 
-    concat <| fromList [ fromList [ 1, 2 ], fromList [ 3 ], fromList [ 4, 5 ] ] |> toList
+    concat (fromList [ fromList [ 1, 2 ], fromList [ 3 ], fromList [ 4, 5 ] ]) |> toList
     --> [ 1, 2, 3, 4, 5 ]
 
 Complexity: O(n), in practice it can be O(1) if the top level is the result of `fromList`
