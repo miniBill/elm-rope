@@ -5,7 +5,6 @@ module Rope exposing
     , length, reverse, member, all, any, maximum, minimum, sum, product
     , appendTo, prependTo, concat, concatMap
     , isEmpty
-    , concatMapTco, foldlTco
     )
 
 {-|
@@ -192,58 +191,30 @@ foldl f acc rope =
         Leaf list ->
             List.foldl f acc list
 
-        Node ropes ->
-            List.foldl (\childRope childAcc -> foldl f childAcc childRope) acc ropes
-
-
-{-| Reduce a rope from the left.
-
-    foldlTco (+) 0 (fromList [ 1, 2, 3 ])
-    --> 6
-
-    foldlTco (::) [] (fromList [ 1, 2, 3 ])
-    --> [ 3, 2, 1 ]
-
-So `foldlTco step state [1,2,3]` is like saying:
-
-    state
-        |> step 1
-        |> step 2
-        |> step 3
-
-Complexity: O(n)
-
--}
-foldlTco : (a -> b -> b) -> b -> Rope a -> b
-foldlTco f acc rope =
-    case rope of
-        Leaf list ->
-            List.foldl f acc list
-
         Node [] ->
             acc
 
         Node ropes ->
             let
-                foldlTcoHelper : List (List (Rope a)) -> b -> b
-                foldlTcoHelper queue res =
+                foldlHelper : List (List (Rope a)) -> b -> b
+                foldlHelper queue res =
                     case queue of
                         [] ->
                             res
 
                         [] :: tail ->
-                            foldlTcoHelper tail res
+                            foldlHelper tail res
 
                         ((Leaf list) :: headTail) :: tail ->
-                            foldlTcoHelper (headTail :: tail) (List.foldl f res list)
+                            foldlHelper (headTail :: tail) (List.foldl f res list)
 
                         ((Node []) :: headTail) :: tail ->
-                            foldlTcoHelper (headTail :: tail) res
+                            foldlHelper (headTail :: tail) res
 
                         ((Node childRopes) :: headTail) :: tail ->
-                            foldlTcoHelper (childRopes :: headTail :: tail) res
+                            foldlHelper (childRopes :: headTail :: tail) res
             in
-            foldlTcoHelper [ ropes ] acc
+            foldlHelper [ ropes ] acc
 
 
 {-| Reduce a rope from the right.
@@ -578,18 +549,7 @@ concatMap f rope =
             Node (List.map f list)
 
         Node _ ->
-            --List.foldl (\child acc -> appendTo acc (concatMap f child)) empty ropes
-            foldlTco (\child acc -> appendTo acc (f child)) empty rope
-
-
-{-| Map a given function onto a list and flatten the resulting lists.
-
-    concatMap f xs == concat (map f xs)
-
--}
-concatMapTco : (a -> Rope b) -> Rope a -> Rope b
-concatMapTco f ropes =
-    foldlTco (\rope acc -> appendTo acc (f rope)) empty ropes
+            foldl (\child acc -> appendTo acc (f child)) empty rope
 
 
 
