@@ -1,5 +1,5 @@
 module Rope exposing
-    ( Rope
+    ( Rope(..)
     , empty, singleton, append, prepend, fromList
     , map, indexedMap, foldl, foldr, filter, filterMap, toList
     , length, reverse, member, all, any, maximum, minimum, sum, product
