@@ -110,8 +110,8 @@ Complexity: O(1)
 
 -}
 append : a -> Rope a -> Rope a
-append tail head =
-    Node [ head, Leaf [ tail ] ]
+append last init =
+    Node [ init, Leaf [ last ] ]
 
 
 {-| Build a rope from a list.
@@ -186,13 +186,13 @@ Complexity: O(n)
 
 -}
 foldl : (a -> b -> b) -> b -> Rope a -> b
-foldl f acc rope =
+foldl f initialAcc rope =
     case rope of
         Leaf list ->
-            List.foldl f acc list
+            List.foldl f initialAcc list
 
         Node [] ->
-            acc
+            initialAcc
 
         Node ropes ->
             let
@@ -214,7 +214,7 @@ foldl f acc rope =
                         ((Node childRopes) :: headTail) :: tail ->
                             foldlHelper (childRopes :: headTail :: tail) res
             in
-            foldlHelper [ ropes ] acc
+            foldlHelper [ ropes ] initialAcc
 
 
 {-| Reduce a rope from the right.
@@ -234,13 +234,13 @@ So `foldr step state [1,2,3]` is like saying:
 
 -}
 foldr : (a -> b -> b) -> b -> Rope a -> b
-foldr f acc rope =
+foldr f initialAcc rope =
     case rope of
         Leaf list ->
-            List.foldr f acc list
+            List.foldr f initialAcc list
 
         Node ropes ->
-            List.foldr (\childRope childAcc -> foldr f childAcc childRope) acc ropes
+            List.foldr (\childRope childAcc -> foldr f childAcc childRope) initialAcc ropes
 
 
 {-| Keep elements that satisfy the test.
@@ -258,11 +258,11 @@ filter isGood rope =
         Node ropes ->
             Node
                 (List.foldr
-                    (\x acc ->
+                    (\e acc ->
                         let
                             filtered : Rope a
                             filtered =
-                                filter isGood x
+                                filter isGood e
                         in
                         if isEmpty filtered then
                             acc
@@ -287,19 +287,19 @@ from an untrusted source and you want to turn them into numbers:
 
 -}
 filterMap : (a -> Maybe b) -> Rope a -> Rope b
-filterMap isGood rope =
+filterMap f rope =
     case rope of
         Leaf list ->
-            Leaf (List.filterMap isGood list)
+            Leaf (List.filterMap f list)
 
         Node ropes ->
             Node
                 (List.foldr
-                    (\x acc ->
+                    (\e acc ->
                         let
                             filtered : Rope b
                             filtered =
-                                filterMap isGood x
+                                filterMap f e
                         in
                         if isEmpty filtered then
                             acc
@@ -319,7 +319,7 @@ Complexity: O(n)
 -}
 toList : Rope a -> List a
 toList rope =
-    foldl (::) [] rope |> List.reverse
+    foldr (::) [] rope
 
 
 
@@ -333,8 +333,8 @@ toList rope =
 
 -}
 length : Rope a -> Int
-length xs =
-    foldl (\_ i -> i + 1) 0 xs
+length rope =
+    foldl (\_ len -> len + 1) 0 rope
 
 
 {-| Reverse a rope.
@@ -356,8 +356,8 @@ reverse rope =
 
 -}
 member : a -> Rope a -> Bool
-member x xs =
-    any (\a -> a == x) xs
+member needle rope =
+    any (\a -> a == needle) rope
 
 
 {-| Determine if all elements satisfy some test.
@@ -371,8 +371,8 @@ member x xs =
 
 -}
 all : (a -> Bool) -> Rope a -> Bool
-all isOkay list =
-    not (any (\a -> not (isOkay a)) list)
+all isOkay rope =
+    not (any (\a -> not (isOkay a)) rope)
 
 
 {-| Determine if any elements satisfy some test.
@@ -489,13 +489,13 @@ Complexity: O(1)
 
 -}
 appendTo : Rope a -> Rope a -> Rope a
-appendTo left right =
-    case right of
+appendTo early late =
+    case late of
         Node ropes ->
-            Node (left :: ropes)
+            Node (early :: ropes)
 
         Leaf _ ->
-            Node [ left, right ]
+            Node [ early, late ]
 
 
 {-| Put two ropes together, the first after the second.
@@ -510,13 +510,13 @@ Complexity: O(1)
 
 -}
 prependTo : Rope a -> Rope a -> Rope a
-prependTo left right =
-    case left of
+prependTo late early =
+    case late of
         Node ropes ->
-            Node (right :: ropes)
+            Node (early :: ropes)
 
         Leaf _ ->
-            Node [ right, left ]
+            Node [ early, late ]
 
 
 {-| Concatenate a bunch of ropes into a single rope:
