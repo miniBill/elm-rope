@@ -6,11 +6,15 @@ import List.All
 import Rope.All
 import Rope.Concat
 import Rope.ConcatMap
+import Rope.Filter
+import Rope.FilterMap
 import Rope.IndexedMap
+import Rope.IsEmpty
 import Rope.Length
 import Rope.Local as Rope exposing (Rope)
 import Rope.Map
 import Rope.Minimum
+import Rope.Reverse
 import Rope.Sum
 import Rope.ToList
 
@@ -39,16 +43,10 @@ all =
                 , ( "with foldr", Rope.ToList.withFoldr )
                 , ( "with foldr preserving last list", Rope.ToList.withFoldrPreservingLastList )
                 ]
-            , Benchmark.Alternative.rank "length"
-                (\candidate -> candidate exampleRope)
-                [ ( "with foldl", Rope.Length.withFoldl )
-                , ( "with foldr", Rope.Length.withFoldr )
-                , ( "nested", Rope.Length.nested )
-                ]
             , Benchmark.Alternative.rank "all"
                 (\candidate -> candidate (\a -> a /= 19) exampleRope)
                 [ ( "nested", Rope.All.nested )
-                , ( "not (any (not << ...))", Rope.All.notAnyNot )
+                , ( "not (any (not ...))", Rope.All.notAnyNot )
                 ]
             , Benchmark.Alternative.rank "sum (also applies to product)"
                 (\candidate -> candidate exampleRope)
@@ -63,10 +61,40 @@ all =
                 , ( "with foldl", Rope.Minimum.withFoldl )
                 , ( "with nested fold", Rope.Minimum.withNestedFold )
                 ]
+            , Benchmark.Alternative.rank "reverse"
+                (\candidate -> candidate exampleRope)
+                [ ( "foldl to flat", Rope.Reverse.foldlToFlat )
+                , ( "foldr to end to flat", Rope.Reverse.foldrToEndToFlat )
+                , ( "keep nested", Rope.Reverse.keepNested )
+                ]
+            , Benchmark.Alternative.rank "filter"
+                (\candidate -> candidate (\el -> remainderBy 2 el == 0) exampleRope)
+                [ ( "foldl to end to flat", Rope.Filter.foldlToEndToFlat )
+                , ( "foldl |> reverse to flat", Rope.Filter.foldlReverseToFlat )
+                , ( "foldr to flat", Rope.Filter.foldrToFlat )
+                , ( "keep nested", Rope.Filter.keepNested )
+                ]
+            , Benchmark.Alternative.rank "filterMap"
+                (\candidate ->
+                    candidate
+                        (\el ->
+                            if remainderBy 2 el == 0 then
+                                Just el
+
+                            else
+                                Nothing
+                        )
+                        exampleRope
+                )
+                [ ( "foldl to end to flat", Rope.FilterMap.foldlToEndToFlat )
+                , ( "foldl |> reverse to flat", Rope.FilterMap.foldlReverseToFlat )
+                , ( "foldr to flat", Rope.FilterMap.foldrToFlat )
+                , ( "keep nested", Rope.FilterMap.keepNested )
+                ]
             , Benchmark.Alternative.rank "map"
                 (\candidate -> candidate (\n -> n + 1) exampleRope)
-                [ ( "to flat with foldl |> reverse", Rope.Map.foldlReverseToFlat )
-                , ( "to flat with foldr", Rope.Map.foldrToFlat )
+                [ ( "foldl |> reverse to flat", Rope.Map.foldlReverseToFlat )
+                , ( "foldr to flat", Rope.Map.foldrToFlat )
                 , ( "keep nested", Rope.Map.keepNested )
                 ]
             , Benchmark.Alternative.rank "indexedMap"
@@ -85,6 +113,18 @@ all =
                 [ ( "with append", Rope.ConcatMap.withAppend )
                 , ( "nested", Rope.ConcatMap.nested )
                 , ( "with :: fold to Node", Rope.ConcatMap.withConsFoldToNode )
+                ]
+            , Benchmark.Alternative.rank "length"
+                (\candidate -> candidate exampleRope)
+                [ ( "with foldl", Rope.Length.withFoldl )
+                , ( "with foldr", Rope.Length.withFoldr )
+                , ( "nested", Rope.Length.nested )
+                ]
+            , Benchmark.Alternative.rank "isEmpty"
+                (\candidate -> candidate emptyExampleRope)
+                [ ( "with foldl", Rope.IsEmpty.withFoldl )
+                , ( "with foldr", Rope.IsEmpty.withFoldr )
+                , ( "nested", Rope.IsEmpty.nested )
                 ]
             ]
         ]
@@ -129,5 +169,20 @@ exampleRope =
                                     (\levelThree ->
                                         Rope.fromList [ levelOne, levelTwo, levelThree ]
                                     )
+                        )
+            )
+
+
+emptyExampleRope : Rope Int
+emptyExampleRope =
+    Rope.fromList (List.repeat 14 ())
+        |> Rope.concatMap
+            (\() ->
+                Rope.fromList (List.repeat 10 ())
+                    |> Rope.concatMap
+                        (\() ->
+                            Rope.fromList (List.repeat 5 ())
+                                |> Rope.concatMap
+                                    (\() -> Rope.empty)
                         )
             )

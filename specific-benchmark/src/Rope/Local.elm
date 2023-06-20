@@ -7,7 +7,7 @@ module Rope.Local exposing
     , isEmpty
     )
 
-{-| The exact same as `Rope` but with locally exposed variants.
+{-| The exact same as `Rope` 1.0.0 but with locally exposed variants.
 
 
 # Types
