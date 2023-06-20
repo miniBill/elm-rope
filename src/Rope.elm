@@ -247,8 +247,8 @@ foldr f initialAcc rope =
 
 {-| Keep elements that satisfy the test.
 
-    filter (\n -> modBy 2 n == 0) (fromList [1,2,3,4,5,6]) |> toList
-    --> [2,4,6]
+    filter (\n -> modBy 2 n == 0) (fromList [ 1, 2, 3, 4, 5, 6 ]) |> toList
+    --> [ 2, 4, 6 ]
 
 -}
 filter : (a -> Bool) -> Rope a -> Rope a
@@ -273,7 +273,7 @@ from an untrusted source and you want to turn them into numbers:
     numbers =
         filterMap String.toInt (fromList [ "3", "hi", "12", "4th", "May" ])
 
-    numbers -> fromList [3, 12]
+    numbers -> fromList [ 3, 12 ]
 
 -}
 filterMap : (a -> Maybe b) -> Rope a -> Rope b
@@ -294,7 +294,10 @@ filterMap try rope =
 
 {-| Convert a rope into the equivalent list.
 
-Complexity: O(n)
+    concat (fromList [ fromList [ 1, 2 ], fromList [ 3, 4 ] ]) |> toList
+    --> [ 1, 2, 3, 4 ]
+
+Complexity: O(n), in practice it can be O(1) if the top level is the result of `fromList`
 
 -}
 toList : Rope a -> List a
@@ -313,7 +316,7 @@ toList rope =
 
 {-| Determine the length of a rope.
 
-    length (fromList [1,2,3])
+    length (fromList [ 1, 2, 3 ])
     --> 3
 
 -}
@@ -329,7 +332,8 @@ length rope =
 
 {-| Reverse a rope.
 
-    reverse [ 1, 2, 3, 4 ] == [ 4, 3, 2, 1 ]
+    reverse (fromList [ 1, 2, 3, 4 ]) |> toList
+    --> [ 4, 3, 2, 1 ]
 
 -}
 reverse : Rope a -> Rope a
@@ -346,6 +350,7 @@ reverse rope =
 
     member 9 (fromList [1,2,3,4])
     --> False
+
     member 4 (fromList [1,2,3,4])
     --> True
 
@@ -357,9 +362,9 @@ member needle rope =
 
 {-| Determine if all elements satisfy some test.
 
-    all (\n -> modBy 2 n == 0) (fromList [2,4])
+    all (\n -> modBy 2 n == 0) (fromList [ 2, 4 ])
     --> True
-    all (\n -> modBy 2 n == 0) (fromList [2,3])
+    all (\n -> modBy 2 n == 0) (fromList [ 2, 3 ])
     --> False
     all (\n -> modBy 2 n == 0) (fromList [])
     --> True
@@ -452,7 +457,7 @@ minimum rope =
             Nothing
 
         Node (headSubRope :: tailSubRopes) ->
-            listFilledFoldl1Map maximum
+            listFilledFoldl1Map minimum
                 (\a b ->
                     case a of
                         Nothing ->
@@ -577,7 +582,7 @@ concat ropes =
             Node (List.map concat children)
 
 
-{-| Map a given function onto a list and flatten the resulting lists.
+{-| Map a given function onto a list and flatten the resulting ropes.
 
     concatMap f xs == concat (map f xs)
 
