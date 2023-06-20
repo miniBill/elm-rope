@@ -1,4 +1,4 @@
-module Util exposing (listAll, listFilledFoldl1Map, listProductMap, listSumMap)
+module Util exposing (listAll, listFilledFoldl1Map, listProductMap, listReverseMap, listSumMap)
 
 
 listSumMap : (a -> number) -> List a -> number
@@ -9,6 +9,11 @@ listSumMap toNumber list =
 listProductMap : (a -> number) -> List a -> number
 listProductMap toNumber list =
     List.foldl (\el acc -> acc * toNumber el) 1 list
+
+
+listReverseMap : (a -> b) -> List a -> List b
+listReverseMap elementChange list =
+    List.foldl (\el acc -> elementChange el :: acc) [] list
 
 
 listFilledFoldl1Map : (a -> b) -> (b -> b -> b) -> ( a, List a ) -> b
