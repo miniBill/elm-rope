@@ -625,6 +625,9 @@ concatMap f rope =
     isEmpty (fromList [])
     --> True
 
+    isEmpty (fromList [fromList [], fromList []])
+    --> True
+
 -}
 isEmpty : Rope a -> Bool
 isEmpty rope =
