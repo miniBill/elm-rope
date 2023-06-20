@@ -41,6 +41,8 @@ module Rope exposing
 
 -}
 
+import Util exposing (listAll, listFilledFoldl1Map, listProductMap, listSumMap)
+
 
 {-| A `Rope` is similar to a list, but has fast (constant time) concatenation at both ends, and fast concatenation of two `Rope`s.
 
@@ -319,7 +321,12 @@ Complexity: O(n)
 -}
 toList : Rope a -> List a
 toList rope =
-    foldr (::) [] rope
+    case rope of
+        Leaf list ->
+            list
+
+        Node _ ->
+            foldr (::) [] rope
 
 
 
@@ -334,7 +341,12 @@ toList rope =
 -}
 length : Rope a -> Int
 length rope =
-    foldl (\_ len -> len + 1) 0 rope
+    case rope of
+        Leaf list ->
+            List.length list
+
+        Node ropes ->
+            listSumMap length ropes
 
 
 {-| Reverse a rope.
@@ -372,7 +384,12 @@ member needle rope =
 -}
 all : (a -> Bool) -> Rope a -> Bool
 all isOkay rope =
-    not (any (\a -> not (isOkay a)) rope)
+    case rope of
+        Leaf list ->
+            listAll isOkay list
+
+        Node ropes ->
+            listAll (\subRope -> all isOkay subRope) ropes
 
 
 {-| Determine if any elements satisfy some test.
@@ -394,7 +411,7 @@ any isOkay rope =
             List.any isOkay list
 
         Node ropes ->
-            List.any (any isOkay) ropes
+            List.any (\subRope -> any isOkay subRope) ropes
 
 
 {-| Find the maximum element in a non-empty rope.
@@ -412,10 +429,25 @@ maximum rope =
         Leaf list ->
             List.maximum list
 
-        Node ropes ->
-            ropes
-                |> List.filterMap maximum
-                |> List.maximum
+        Node [] ->
+            Nothing
+
+        Node (headSubRope :: tailSubRopes) ->
+            listFilledFoldl1Map maximum
+                (\a b ->
+                    case a of
+                        Nothing ->
+                            b
+
+                        Just aContent ->
+                            case b of
+                                Nothing ->
+                                    Just aContent
+
+                                Just bContent ->
+                                    Just (Basics.max aContent bContent)
+                )
+                ( headSubRope, tailSubRopes )
 
 
 {-| Find the minimum element in a non-empty rope.
@@ -433,10 +465,25 @@ minimum rope =
         Leaf list ->
             List.minimum list
 
-        Node ropes ->
-            ropes
-                |> List.filterMap minimum
-                |> List.minimum
+        Node [] ->
+            Nothing
+
+        Node (headSubRope :: tailSubRopes) ->
+            listFilledFoldl1Map maximum
+                (\a b ->
+                    case a of
+                        Nothing ->
+                            b
+
+                        Just aContent ->
+                            case b of
+                                Nothing ->
+                                    Just aContent
+
+                                Just bContent ->
+                                    Just (Basics.min aContent bContent)
+                )
+                ( headSubRope, tailSubRopes )
 
 
 {-| Get the sum of the rope elements.
@@ -453,7 +500,12 @@ minimum rope =
 -}
 sum : Rope number -> number
 sum numbers =
-    foldl (+) 0 numbers
+    case numbers of
+        Leaf list ->
+            List.sum list
+
+        Node ropes ->
+            listSumMap sum ropes
 
 
 {-| Get the product of the rope elements.
@@ -470,7 +522,12 @@ sum numbers =
 -}
 product : Rope number -> number
 product numbers =
-    foldl (*) 1 numbers
+    case numbers of
+        Leaf list ->
+            List.product list
+
+        Node ropes ->
+            listProductMap product ropes
 
 
 
@@ -548,8 +605,15 @@ concatMap f rope =
         Leaf list ->
             Node (List.map f list)
 
-        Node _ ->
-            foldl (\child acc -> appendTo acc (f child)) empty rope
+        Node ropes ->
+            Node
+                (List.foldr
+                    (\subRope acc ->
+                        foldr (\el subAcc -> f el :: subAcc) acc subRope
+                    )
+                    []
+                    ropes
+                )
 
 
 
