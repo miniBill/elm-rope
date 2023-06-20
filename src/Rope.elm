@@ -41,7 +41,7 @@ module Rope exposing
 
 -}
 
-import Util exposing (listAll, listFilledFoldl1Map, listProductMap, listSumMap)
+import Util exposing (listAll, listFilledFoldl1Map, listProductMap, listReverseMap, listSumMap)
 
 
 {-| A `Rope` is similar to a list, but has fast (constant time) concatenation at both ends, and fast concatenation of two `Rope`s.
@@ -253,65 +253,43 @@ foldr f initialAcc rope =
 -}
 filter : (a -> Bool) -> Rope a -> Rope a
 filter isGood rope =
-    case rope of
-        Leaf list ->
-            Leaf (List.filter isGood list)
+    foldr
+        (\el acc ->
+            if isGood el then
+                el :: acc
 
-        Node ropes ->
-            Node
-                (List.foldr
-                    (\e acc ->
-                        let
-                            filtered : Rope a
-                            filtered =
-                                filter isGood e
-                        in
-                        if isEmpty filtered then
-                            acc
-
-                        else
-                            filtered :: acc
-                    )
-                    []
-                    ropes
-                )
+            else
+                acc
+        )
+        []
+        rope
+        |> Leaf
 
 
 {-| Filter out certain values. For example, maybe you have a bunch of strings
 from an untrusted source and you want to turn them into numbers:
 
-
-    numbers : List Int
+    numbers : Rope Int
     numbers =
-        filterMap String.toInt [ "3", "hi", "12", "4th", "May" ]
+        filterMap String.toInt (fromList [ "3", "hi", "12", "4th", "May" ])
 
-    -- numbers == [3, 12]
+    numbers -> fromList [3, 12]
 
 -}
 filterMap : (a -> Maybe b) -> Rope a -> Rope b
-filterMap f rope =
-    case rope of
-        Leaf list ->
-            Leaf (List.filterMap f list)
+filterMap try rope =
+    foldr
+        (\el acc ->
+            case try el of
+                Just elSuccess ->
+                    elSuccess :: acc
 
-        Node ropes ->
-            Node
-                (List.foldr
-                    (\e acc ->
-                        let
-                            filtered : Rope b
-                            filtered =
-                                filterMap f e
-                        in
-                        if isEmpty filtered then
-                            acc
-
-                        else
-                            filtered :: acc
-                    )
-                    []
-                    ropes
-                )
+                Nothing ->
+                    acc
+        )
+        []
+        rope
+        |> Leaf
 
 
 {-| Convert a rope into the equivalent list.
@@ -356,7 +334,12 @@ length rope =
 -}
 reverse : Rope a -> Rope a
 reverse rope =
-    Leaf <| foldl (::) [] rope
+    case rope of
+        Leaf list ->
+            Leaf (List.reverse list)
+
+        Node ropes ->
+            Node (listReverseMap reverse ropes)
 
 
 {-| Figure out whether a rope contains a value.
@@ -625,7 +608,7 @@ concatMap f rope =
     isEmpty (fromList [])
     --> True
 
-    isEmpty (fromList [fromList [], fromList []])
+    isEmpty (fromList [] |> appendTo (fromList []))
     --> True
 
 -}
