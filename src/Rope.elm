@@ -633,4 +633,4 @@ isEmpty rope =
             List.isEmpty list
 
         Node ropes ->
-            List.all isEmpty ropes
+            listAll isEmpty ropes
