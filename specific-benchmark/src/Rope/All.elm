@@ -16,4 +16,4 @@ nested isOkay rope =
             listAll isOkay list
 
         Rope.Node ropes ->
-            listAll (nested isOkay) ropes
+            listAll (\subRope -> nested isOkay subRope) ropes
