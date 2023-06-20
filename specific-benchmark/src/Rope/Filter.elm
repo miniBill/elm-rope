@@ -60,16 +60,15 @@ keepNested isGood rope =
             Rope.Node
                 (List.foldr
                     (\e acc ->
-                        let
-                            filtered : Rope a
-                            filtered =
-                                keepNested isGood e
-                        in
-                        if Rope.isEmpty filtered then
-                            acc
+                        case keepNested isGood e of
+                            Rope.Leaf [] ->
+                                acc
 
-                        else
-                            filtered :: acc
+                            Rope.Node [] ->
+                                acc
+
+                            filtered ->
+                                filtered :: acc
                     )
                     []
                     ropes

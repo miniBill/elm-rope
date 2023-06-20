@@ -63,16 +63,15 @@ keepNested try rope =
             Rope.Node
                 (List.foldr
                     (\e acc ->
-                        let
-                            filtered : Rope b
-                            filtered =
-                                keepNested try e
-                        in
-                        if (filtered == Rope.Leaf []) || (filtered == Rope.Node []) then
-                            acc
+                        case keepNested try e of
+                            Rope.Leaf [] ->
+                                acc
 
-                        else
-                            filtered :: acc
+                            Rope.Node [] ->
+                                acc
+
+                            filtered ->
+                                filtered :: acc
                     )
                     []
                     ropes
