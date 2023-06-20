@@ -1,6 +1,6 @@
 module Rope.IndexedMap exposing (withFoldlReverse, withFoldlToEnd)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 
 
 withFoldlReverse : (Int -> a -> b) -> Rope a -> Rope b

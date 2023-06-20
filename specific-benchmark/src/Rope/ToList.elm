@@ -1,6 +1,6 @@
 module Rope.ToList exposing (withFoldlReverse, withFoldr, withFoldrPreservingLastList)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 
 
 withFoldlReverse : Rope a -> List a

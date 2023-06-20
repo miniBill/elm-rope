@@ -1,6 +1,6 @@
 module Rope.Map exposing (foldlReverseToFlat, foldrToFlat, keepNested)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 
 
 foldlReverseToFlat : (a -> b) -> Rope a -> Rope b
@@ -22,7 +22,7 @@ keepNested : (a -> b) -> Rope a -> Rope b
 keepNested f rope =
     case rope of
         Rope.Leaf list ->
-            Rope.Leaf (List.map f list)
+            Rope.fromList (List.map f list)
 
         Rope.Node ropes ->
             Rope.Node (List.map (\subRope -> keepNested f subRope) ropes)

@@ -1,5 +1,5 @@
-module Rope exposing
-    ( Rope
+module Rope.Local exposing
+    ( Rope(..)
     , empty, singleton, append, prepend, fromList
     , map, indexedMap, foldl, foldr, filter, filterMap, toList
     , length, reverse, member, all, any, maximum, minimum, sum, product
@@ -7,7 +7,7 @@ module Rope exposing
     , isEmpty
     )
 
-{-|
+{-| The exact same as `Rope` but with locally exposed variants.
 
 
 # Types
@@ -40,8 +40,6 @@ module Rope exposing
 @docs isEmpty
 
 -}
-
-import Util exposing (listAll, listFilledFoldl1Map, listProductMap, listReverseMap, listSumMap)
 
 
 {-| A `Rope` is similar to a list, but has fast (constant time) concatenation at both ends, and fast concatenation of two `Rope`s.
@@ -247,67 +245,81 @@ foldr f initialAcc rope =
 
 {-| Keep elements that satisfy the test.
 
-    filter (\n -> modBy 2 n == 0) (fromList [ 1, 2, 3, 4, 5, 6 ]) |> toList
-    --> [ 2, 4, 6 ]
+    filter (\n -> modBy 2 n == 0) (fromList [1,2,3,4,5,6]) |> toList
+    --> [2,4,6]
 
 -}
 filter : (a -> Bool) -> Rope a -> Rope a
 filter isGood rope =
-    foldr
-        (\el acc ->
-            if isGood el then
-                el :: acc
+    case rope of
+        Leaf list ->
+            Leaf (List.filter isGood list)
 
-            else
-                acc
-        )
-        []
-        rope
-        |> Leaf
+        Node ropes ->
+            Node
+                (List.foldr
+                    (\e acc ->
+                        let
+                            filtered : Rope a
+                            filtered =
+                                filter isGood e
+                        in
+                        if isEmpty filtered then
+                            acc
+
+                        else
+                            filtered :: acc
+                    )
+                    []
+                    ropes
+                )
 
 
 {-| Filter out certain values. For example, maybe you have a bunch of strings
 from an untrusted source and you want to turn them into numbers:
 
-    numbers : Rope Int
-    numbers =
-        filterMap String.toInt (fromList [ "3", "hi", "12", "4th", "May" ])
 
-    numbers -> fromList [ 3, 12 ]
+    numbers : List Int
+    numbers =
+        filterMap String.toInt [ "3", "hi", "12", "4th", "May" ]
+
+    -- numbers == [3, 12]
 
 -}
 filterMap : (a -> Maybe b) -> Rope a -> Rope b
-filterMap try rope =
-    foldr
-        (\el acc ->
-            case try el of
-                Just elSuccess ->
-                    elSuccess :: acc
+filterMap f rope =
+    case rope of
+        Leaf list ->
+            Leaf (List.filterMap f list)
 
-                Nothing ->
-                    acc
-        )
-        []
-        rope
-        |> Leaf
+        Node ropes ->
+            Node
+                (List.foldr
+                    (\e acc ->
+                        let
+                            filtered : Rope b
+                            filtered =
+                                filterMap f e
+                        in
+                        if isEmpty filtered then
+                            acc
+
+                        else
+                            filtered :: acc
+                    )
+                    []
+                    ropes
+                )
 
 
 {-| Convert a rope into the equivalent list.
 
-    concat (fromList [ fromList [ 1, 2 ], fromList [ 3, 4 ] ]) |> toList
-    --> [ 1, 2, 3, 4 ]
-
-Complexity: O(n), in practice it can be O(1) if the top level is the result of `fromList`
+Complexity: O(n)
 
 -}
 toList : Rope a -> List a
 toList rope =
-    case rope of
-        Leaf list ->
-            list
-
-        Node _ ->
-            foldr (::) [] rope
+    foldr (::) [] rope
 
 
 
@@ -316,41 +328,29 @@ toList rope =
 
 {-| Determine the length of a rope.
 
-    length (fromList [ 1, 2, 3 ])
+    length (fromList [1,2,3])
     --> 3
 
 -}
 length : Rope a -> Int
 length rope =
-    case rope of
-        Leaf list ->
-            List.length list
-
-        Node ropes ->
-            listSumMap length ropes
+    foldl (\_ len -> len + 1) 0 rope
 
 
 {-| Reverse a rope.
 
-    reverse (fromList [ 1, 2, 3, 4 ]) |> toList
-    --> [ 4, 3, 2, 1 ]
+    reverse [ 1, 2, 3, 4 ] == [ 4, 3, 2, 1 ]
 
 -}
 reverse : Rope a -> Rope a
 reverse rope =
-    case rope of
-        Leaf list ->
-            Leaf (List.reverse list)
-
-        Node ropes ->
-            Node (listReverseMap reverse ropes)
+    Leaf <| foldl (::) [] rope
 
 
 {-| Figure out whether a rope contains a value.
 
     member 9 (fromList [1,2,3,4])
     --> False
-
     member 4 (fromList [1,2,3,4])
     --> True
 
@@ -362,9 +362,9 @@ member needle rope =
 
 {-| Determine if all elements satisfy some test.
 
-    all (\n -> modBy 2 n == 0) (fromList [ 2, 4 ])
+    all (\n -> modBy 2 n == 0) (fromList [2,4])
     --> True
-    all (\n -> modBy 2 n == 0) (fromList [ 2, 3 ])
+    all (\n -> modBy 2 n == 0) (fromList [2,3])
     --> False
     all (\n -> modBy 2 n == 0) (fromList [])
     --> True
@@ -372,12 +372,7 @@ member needle rope =
 -}
 all : (a -> Bool) -> Rope a -> Bool
 all isOkay rope =
-    case rope of
-        Leaf list ->
-            listAll isOkay list
-
-        Node ropes ->
-            listAll (\subRope -> all isOkay subRope) ropes
+    not (any (\a -> not (isOkay a)) rope)
 
 
 {-| Determine if any elements satisfy some test.
@@ -399,7 +394,7 @@ any isOkay rope =
             List.any isOkay list
 
         Node ropes ->
-            List.any (\subRope -> any isOkay subRope) ropes
+            List.any (any isOkay) ropes
 
 
 {-| Find the maximum element in a non-empty rope.
@@ -417,25 +412,10 @@ maximum rope =
         Leaf list ->
             List.maximum list
 
-        Node [] ->
-            Nothing
-
-        Node (headSubRope :: tailSubRopes) ->
-            listFilledFoldl1Map maximum
-                (\a b ->
-                    case a of
-                        Nothing ->
-                            b
-
-                        Just aContent ->
-                            case b of
-                                Nothing ->
-                                    Just aContent
-
-                                Just bContent ->
-                                    Just (Basics.max aContent bContent)
-                )
-                ( headSubRope, tailSubRopes )
+        Node ropes ->
+            ropes
+                |> List.filterMap maximum
+                |> List.maximum
 
 
 {-| Find the minimum element in a non-empty rope.
@@ -453,25 +433,10 @@ minimum rope =
         Leaf list ->
             List.minimum list
 
-        Node [] ->
-            Nothing
-
-        Node (headSubRope :: tailSubRopes) ->
-            listFilledFoldl1Map minimum
-                (\a b ->
-                    case a of
-                        Nothing ->
-                            b
-
-                        Just aContent ->
-                            case b of
-                                Nothing ->
-                                    Just aContent
-
-                                Just bContent ->
-                                    Just (Basics.min aContent bContent)
-                )
-                ( headSubRope, tailSubRopes )
+        Node ropes ->
+            ropes
+                |> List.filterMap minimum
+                |> List.minimum
 
 
 {-| Get the sum of the rope elements.
@@ -488,12 +453,7 @@ minimum rope =
 -}
 sum : Rope number -> number
 sum numbers =
-    case numbers of
-        Leaf list ->
-            List.sum list
-
-        Node ropes ->
-            listSumMap sum ropes
+    foldl (+) 0 numbers
 
 
 {-| Get the product of the rope elements.
@@ -510,12 +470,7 @@ sum numbers =
 -}
 product : Rope number -> number
 product numbers =
-    case numbers of
-        Leaf list ->
-            List.product list
-
-        Node ropes ->
-            listProductMap product ropes
+    foldl (*) 1 numbers
 
 
 
@@ -582,7 +537,7 @@ concat ropes =
             Node (List.map concat children)
 
 
-{-| Map a given function onto a list and flatten the resulting ropes.
+{-| Map a given function onto a list and flatten the resulting lists.
 
     concatMap f xs == concat (map f xs)
 
@@ -593,15 +548,8 @@ concatMap f rope =
         Leaf list ->
             Node (List.map f list)
 
-        Node ropes ->
-            Node
-                (List.foldr
-                    (\subRope acc ->
-                        foldr (\el subAcc -> f el :: subAcc) acc subRope
-                    )
-                    []
-                    ropes
-                )
+        Node _ ->
+            foldl (\child acc -> appendTo acc (f child)) empty rope
 
 
 
@@ -613,9 +561,6 @@ concatMap f rope =
     isEmpty (fromList [])
     --> True
 
-    isEmpty (fromList [] |> appendTo (fromList []))
-    --> True
-
 -}
 isEmpty : Rope a -> Bool
 isEmpty rope =
@@ -624,4 +569,4 @@ isEmpty rope =
             List.isEmpty list
 
         Node ropes ->
-            listAll isEmpty ropes
+            List.all isEmpty ropes

@@ -1,6 +1,6 @@
 module Rope.Minimum exposing (withFilterMap, withFoldl, withFoldr, withNestedFold)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 import Util exposing (listFilledFoldl1Map)
 
 

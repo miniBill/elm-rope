@@ -1,6 +1,6 @@
 module Rope.Length exposing (nested, withFoldl, withFoldr)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 import Util exposing (listSumMap)
 
 

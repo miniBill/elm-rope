@@ -1,6 +1,6 @@
 module Rope.Concat exposing (nested, withAppend, withConsFoldToNode)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 
 
 withAppend : Rope (Rope a) -> Rope a

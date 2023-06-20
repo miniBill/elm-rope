@@ -3,12 +3,12 @@ module Rope.Benchmark exposing (all, exampleRopeOfRopes)
 import Benchmark exposing (Benchmark)
 import Benchmark.Alternative
 import List.All
-import Rope exposing (Rope)
 import Rope.All
 import Rope.Concat
 import Rope.ConcatMap
 import Rope.IndexedMap
 import Rope.Length
+import Rope.Local as Rope exposing (Rope)
 import Rope.Map
 import Rope.Minimum
 import Rope.Sum

@@ -1,6 +1,6 @@
 module Rope.All exposing (nested, notAnyNot)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 import Util exposing (listAll)
 
 

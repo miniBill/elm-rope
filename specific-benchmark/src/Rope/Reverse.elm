@@ -1,6 +1,6 @@
 module Rope.Reverse exposing (withFoldlToLeaf, withFoldrToLeaf)
 
-import Rope exposing (Rope)
+import Rope.Local as Rope exposing (Rope)
 
 
 withFoldlToLeaf : Rope a -> Rope a
