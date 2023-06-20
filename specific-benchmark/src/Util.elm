@@ -16,7 +16,7 @@ listFilledFoldl1Map change reduce ( el0, el1Up ) =
     el1Up
         |> List.foldl
             (\el soFar ->
-                reduce (change el) soFar
+                reduce soFar (change el) 
             )
             (change el0)
 
