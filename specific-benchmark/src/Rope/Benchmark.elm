@@ -1,4 +1,4 @@
-module Rope.Benchmark exposing (all, exampleRopeOfRopes)
+module Rope.Benchmark exposing (all)
 
 import Benchmark exposing (Benchmark)
 import Benchmark.Alternative
@@ -8,6 +8,8 @@ import Rope.Concat
 import Rope.ConcatMap
 import Rope.Filter
 import Rope.FilterMap
+import Rope.Foldl
+import Rope.Foldr
 import Rope.IndexedMap
 import Rope.IsEmpty
 import Rope.Length
@@ -32,10 +34,17 @@ all =
                 ]
             ]
         , Benchmark.describe "Rope"
-            [ Benchmark.Alternative.rank "fold -l vs -r"
-                (\fold -> fold (+) 0 exampleRope)
-                [ ( "foldr", Rope.foldr )
-                , ( "foldl", Rope.foldl )
+            [ Benchmark.Alternative.rank "foldl"
+                (\candidate -> candidate (-) 10 exampleRope)
+                [ ( "custom", Rope.Foldl.custom )
+                , ( "custom with module-level helper", Rope.Foldl.customWithModuleLevelHelper )
+                , ( "nested", Rope.Foldl.nested )
+                ]
+            , Benchmark.Alternative.rank "foldr"
+                (\candidate -> candidate (-) 10 exampleRope)
+                [ ( "custom", Rope.Foldr.custom )
+                , ( "custom with module-level helper", Rope.Foldr.customWithModuleLevelHelper )
+                , ( "nested", Rope.Foldr.nested )
                 ]
             , Benchmark.Alternative.rank "toList"
                 (\candidate -> candidate exampleRope)
@@ -44,7 +53,7 @@ all =
                 , ( "with foldr preserving last list", Rope.ToList.withFoldrPreservingLastList )
                 ]
             , Benchmark.Alternative.rank "all"
-                (\candidate -> candidate (\a -> a /= 19) exampleRope)
+                (\candidate -> candidate (\a -> a /= 26) exampleRope)
                 [ ( "nested", Rope.All.nested )
                 , ( "not (any (not ...))", Rope.All.notAnyNot )
                 ]
