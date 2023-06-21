@@ -53,7 +53,14 @@ all =
                 , ( "with foldr preserving last list", Rope.ToList.withFoldrPreservingLastList )
                 ]
             , Benchmark.Alternative.rank "all"
-                (\candidate -> candidate (\a -> a /= 26) exampleRope)
+                (\candidate ->
+                    candidate
+                        (\a ->
+                            -- will always be False
+                            a /= -1
+                        )
+                        exampleRope
+                )
                 [ ( "nested", Rope.All.nested )
                 , ( "not (any (not ...))", Rope.All.notAnyNot )
                 ]
