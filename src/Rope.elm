@@ -41,6 +41,7 @@ module Rope exposing
 
 -}
 
+import Internal exposing (Rope(..))
 import Util exposing (listAll, listFilledFoldl1Map, listProductMap, listReverseMap, listSumMap)
 
 
@@ -51,9 +52,8 @@ It's slightly slower (O(n + operations) instead of O(n)) to iterate through, so 
 Internally the `Rope` is a tree of lists.
 
 -}
-type Rope a
-    = Leaf (List a)
-    | Node (List (Rope a))
+type alias Rope a =
+    Internal.Rope a
 
 
 
