@@ -1,12 +1,9 @@
 {
+    "type": "package",
     "name": "miniBill/elm-rope",
     "summary": "A data structure that supports efficient concatenation.",
     "license": "BSD-3-Clause",
-    "version": "1.0.0",
-    "type": "package",
-    "source-directories": [
-        "src"
-    ],
+    "version": "1.1.0",
     "exposed-modules": [
         "Rope"
     ],
