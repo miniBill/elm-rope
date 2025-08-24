@@ -1,6 +1,6 @@
 module Rope exposing
     ( Rope
-    , empty, singleton, append, prepend, fromList
+    , empty, singleton, append, prepend, fromList, fromRopeList
     , map, indexedMap, foldl, foldr, filter, filterMap, toList
     , length, reverse, member, all, any, maximum, minimum, sum, product
     , appendTo, prependTo, concat, concatMap
@@ -17,7 +17,7 @@ module Rope exposing
 
 # Create
 
-@docs empty, singleton, append, prepend, fromList
+@docs empty, singleton, append, prepend, fromList, fromRopeList
 
 
 # Transform
@@ -124,6 +124,16 @@ Complexity: O(1)
 fromList : List a -> Rope a
 fromList list =
     Leaf list
+
+
+{-| Build a rope from a list of ropes.
+
+Complexity: O(1)
+
+-}
+fromRopeList : List (Rope a) -> Rope a
+fromRopeList list =
+    Node list
 
 
 
