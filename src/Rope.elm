@@ -545,12 +545,19 @@ Complexity: O(1)
 -}
 appendTo : Rope a -> Rope a -> Rope a
 appendTo early late =
-    case late of
-        Node ropes ->
-            Node (early :: ropes)
+    if isEmpty early then
+        late
 
-        Leaf _ ->
-            Node [ early, late ]
+    else if isEmpty late then
+        early
+
+    else
+        case late of
+            Node ropes ->
+                Node (early :: ropes)
+
+            Leaf _ ->
+                Node [ early, late ]
 
 
 {-| Put two ropes together, the first after the second.
@@ -566,12 +573,19 @@ Complexity: O(1)
 -}
 prependTo : Rope a -> Rope a -> Rope a
 prependTo late early =
-    case late of
-        Node ropes ->
-            Node (early :: ropes)
+    if isEmpty early then
+        late
 
-        Leaf _ ->
-            Node [ early, late ]
+    else if isEmpty late then
+        early
+
+    else
+        case late of
+            Node ropes ->
+                Node (early :: ropes)
+
+            Leaf _ ->
+                Node [ early, late ]
 
 
 {-| Concatenate a bunch of ropes into a single rope:
